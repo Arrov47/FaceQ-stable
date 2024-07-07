@@ -262,6 +262,7 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
         _badResponse("Status code ine: $statusCode");
       }
     } catch (err) {
+      print(err.toString());
       _badResponse("Message: ${err.toString()}");
     }
   }
