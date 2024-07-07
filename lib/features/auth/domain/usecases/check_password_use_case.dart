@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:faceq/config/errors/failure.dart';
-import 'package:faceq/config/usecase/usecase.dart';
-import 'package:faceq/features/auth/domain/entities/network_state.dart';
+import 'package:faceq/core/usecase/usecase.dart';
 import 'package:faceq/features/auth/domain/repository/auth_repository.dart';
 
 class CheckPasswordUseCase extends UseCase<String,CheckPasswordParams>{

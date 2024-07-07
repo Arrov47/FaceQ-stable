@@ -32,9 +32,9 @@ inputDecorationTheme: const InputDecorationTheme(
   ),
 
     cardTheme: const CardTheme(
-        color: Colors.black,
-        shadowColor: Colors.white,
-        shape: Border.fromBorderSide(BorderSide(color: Colors.white))
+        color: Colors.white,
+        shadowColor: Colors.black,
+        shape: Border.fromBorderSide(BorderSide(color: Colors.black))
     ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ButtonStyle(
@@ -51,6 +51,7 @@ inputDecorationTheme: const InputDecorationTheme(
     labelLarge: TextStyle(color:Colors.black,overflow: TextOverflow.ellipsis,),
     labelMedium: TextStyle(color:Colors.black,overflow: TextOverflow.ellipsis,),
     titleMedium: TextStyle(color:Colors.black,),
+      titleLarge: TextStyle(color:Colors.black,),
   )
 );
 final dark = ThemeData(
@@ -108,5 +109,6 @@ floatingLabelStyle: TextStyle(color: Colors.white),
       labelLarge: TextStyle(color:Colors.white,overflow: TextOverflow.ellipsis,),
       labelMedium: TextStyle(color:Colors.white,overflow: TextOverflow.ellipsis,),
       titleMedium: TextStyle(color:Colors.white,),
+      titleLarge: TextStyle(color:Colors.white,),
     )
 );

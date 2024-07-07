@@ -3,23 +3,24 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:faceq/config/classes/credentials.dart';
+import 'package:faceq/core/widgets/progess_loading.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/local_storage/delete_credentials.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/show_snackbar.dart';
 import 'package:faceq/features/admin_panel/presentation/widgets/NavigationBar/NavigationSideBar.dart';
 import 'package:faceq/features/admin_panel/presentation/widgets/fieldBuilder.dart';
 import 'package:faceq/features/auth/presentation/pages/check_password_page.dart';
+import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class AddUserPage extends StatefulWidget {
-  const AddUserPage({super.key, required this.storageResult});
+  const AddUserPage({super.key});
 
-  final Map<String, dynamic> storageResult;
-
-  static route(Map<String, dynamic> storageResult) => MaterialPageRoute(
-      builder: (context) => AddUserPage(storageResult: storageResult));
+  static route() => MaterialPageRoute(
+      builder: (context) => AddUserPage());
 
   @override
   State<AddUserPage> createState() => _AddUserPageState();
@@ -39,11 +40,14 @@ class _AddUserPageState extends State<AddUserPage> {
 
   final ImagePicker _imagePicker = ImagePicker();
 
+  final _credentials = sl<Credentials>();
+  Widget requestButton = const ProgressLoading();
   @override
   void dispose() {
     super.dispose();
     _name.dispose();
     _surName.dispose();
+    _getRequestButtonClickable();
   }
 
   @override
@@ -66,7 +70,6 @@ class _AddUserPageState extends State<AddUserPage> {
       ),
       drawer: NavigationSideBar(
         scaffoldKey: _scaffoldKey,
-        storageResult: widget.storageResult,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -247,19 +250,7 @@ class _AddUserPageState extends State<AddUserPage> {
             Container(
               margin:
                   const EdgeInsets.symmetric(horizontal: 10.0, vertical: 50.0),
-              child: ElevatedButton(
-                  onPressed: () async {
-                    if (_image == null ||
-                        _name.text.isEmpty ||
-                        _surName.text.isEmpty ||
-                        _groupName == null) {
-                      showSnackBar("Заполните все поля правильно ! ", context,
-                          Colors.red);
-                    } else {
-                      _sendRequest();
-                    }
-                  },
-                  child: const Text("Добавить пользователя")),
+              child: requestButton,
             )
           ],
         ),
@@ -287,13 +278,16 @@ class _AddUserPageState extends State<AddUserPage> {
     //   print(
     //       "STATUS CODE: ${response.statusCode} |\nSTATUS MESSAGE: ${response.statusMessage} |\n DATA: ${response.data}");
     // });
+    setState(() {
+      requestButton = const ProgressLoading();
+    });
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse("http://${widget.storageResult['address']}/addUser"),
+      Uri.parse("http://${_credentials.address}/addUser"),
 
     );
     request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
-    request.fields.addAll({'token':widget.storageResult['token'],
+    request.fields.addAll({'token':_credentials.token,
       'name': _name.text,
       'surname': _surName.text,
       'group': _groupName!,
@@ -308,20 +302,23 @@ class _AddUserPageState extends State<AddUserPage> {
           _fatherName.clear();
         });
         showSnackBar("Пользователь успешно добавлено", context, Colors.green);
+        _getRequestButtonClickable();
       }else{
         showSnackBar("Status code: ${response.statusCode}", context, Colors.red);
+        _getRequestButtonClickable();
       }
     },onError: (err){
       showSnackBar("Status code: ${err.toString()}", context, Colors.red);
+      _getRequestButtonClickable();
     });
   }
 
   Future<List<dynamic>> _getGroups() async {
     try {
       final response = await http.post(
-        Uri.parse("http://${widget.storageResult['address']}/getGroups"),
+        Uri.parse("http://${_credentials.address}/getGroups"),
         body: jsonEncode({
-          'token': widget.storageResult['token'],
+          'token': _credentials.token,
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -331,17 +328,21 @@ class _AddUserPageState extends State<AddUserPage> {
       if (statusCode == 200) {
         final body = jsonDecode(response.body);
         if (!body['is_token_valid']) {
+          _getRequestButtonClickable();
           _signOut();
           return [];
         } else {
+          _getRequestButtonClickable();
           return body['groups'] as List<dynamic>;
         }
       } else {
+        _getRequestButtonClickable();
         showSnackBar("Error occurred in client side",
             _scaffoldKey.currentState!.context, Colors.red);
         return [];
       }
     } catch (err) {
+      _getRequestButtonClickable();
       showSnackBar(
           err.toString(), _scaffoldKey.currentState!.context, Colors.red);
       return [];
@@ -352,5 +353,22 @@ class _AddUserPageState extends State<AddUserPage> {
     deleteCredentials();
     Navigator.pushAndRemoveUntil(_scaffoldKey.currentState!.context,
         CheckPasswordPage.route(), (route) => false);
+  }
+  _getRequestButtonClickable(){
+    setState(() {
+      requestButton = ElevatedButton(
+          onPressed: () async {
+            if (_image == null ||
+                _name.text.isEmpty ||
+                _surName.text.isEmpty ||
+                _groupName == null) {
+              showSnackBar("Заполните все поля правильно ! ", context,
+                  Colors.red);
+            } else {
+              _sendRequest();
+            }
+          },
+          child: const Text("Добавить пользователя"));
+    });
   }
 }

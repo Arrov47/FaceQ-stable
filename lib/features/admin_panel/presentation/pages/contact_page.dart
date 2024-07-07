@@ -1,21 +1,22 @@
 import 'dart:convert';
 
+import 'package:faceq/config/classes/credentials.dart';
 import 'package:faceq/core/widgets/progess_loading.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/show_snackbar.dart';
 import 'package:faceq/features/admin_panel/presentation/widgets/NavigationBar/NavigationSideBar.dart';
+import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http;
 
 class ContactPage extends StatelessWidget {
-  ContactPage({super.key, required this.storageResult});
+  ContactPage({super.key});
 
-  final Map<String, dynamic> storageResult;
-
-  static route(Map<String, dynamic> storageResult) =>
+  static route() =>
       MaterialPageRoute(
-          builder: (context) => ContactPage(storageResult: storageResult));
+          builder: (context) => ContactPage());
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _credentials = sl<Credentials>();
 
   @override
   Widget build(BuildContext context) {
@@ -40,19 +41,50 @@ class ContactPage extends StatelessWidget {
       ),
       drawer: NavigationSideBar(
         scaffoldKey: _scaffoldKey,
-        storageResult: storageResult,
       ),
       body:FutureBuilder(future: _sendRequest(), builder: (context,snapshot){
         if(snapshot.hasData && snapshot.data != null){
           final data = snapshot.data;
-          return Center(child: Column(
-            children: List.generate(data!.length, (_){
-              Widget widget = const Text("");
-              for(final key in data.keys){
-                widget = Text("$key : ${data[key]}\n",style: Theme.of(context).textTheme.headlineLarge);
-              }
-              return widget;
-            })
+          final List<String> keys = [];
+          for(final key in data!.keys){
+            keys.add(key);
+          }
+          return SingleChildScrollView(child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Developers",style: Theme.of(context).textTheme.headlineLarge,),
+                ],
+              ),
+              const SizedBox(
+                height: 50.0,
+              ),
+              ...List.generate(keys.length, (index){
+                final peopleName = keys[index];
+                return Container(
+                  margin: const EdgeInsets.all(8.0),
+                  decoration:const BoxDecoration(
+                    border:  Border.fromBorderSide(BorderSide(color: Colors.blue,width: 5))
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("$peopleName:\n",style: Theme.of(context).textTheme.headlineMedium,),
+                      ...List.generate(data[peopleName].length, (index){
+                        final link = data[peopleName][index];
+                        return Wrap(
+                          children: [
+                            Text("\n$link",style: Theme.of(context).textTheme.titleLarge,),
+                          ],
+                        );
+                      })
+                    ],
+                  ),
+                );
+              })
+            ]
           ),);
         }
         return const ProgressLoading();
@@ -61,9 +93,9 @@ class ContactPage extends StatelessWidget {
   }
 
   Future<Map<String, dynamic>>_sendRequest() async {
-    final response = await http.post(Uri.parse("http://${storageResult['address']}/getContact"),
+    final response = await http.post(Uri.parse("http://${_credentials.address}/getContact"),
         headers: {"Content-Type": "application/json"}, body: jsonEncode({
-          'token':storageResult['token']
+          'token':_credentials.token
         }));
     try{
       if(response.statusCode == 200){

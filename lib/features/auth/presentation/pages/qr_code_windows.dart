@@ -1,16 +1,17 @@
 
 import 'dart:io';
 
+import 'package:faceq/config/classes/credentials.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/local_storage/write_credentials.dart';
 import 'package:faceq/features/auth/presentation/pages/check_password_page.dart';
+import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 class QRCodeScannerWindows extends StatefulWidget {
-  final FlutterSecureStorage flutterSecureStorage;
 
-  const QRCodeScannerWindows({super.key, required this.flutterSecureStorage});
+  const QRCodeScannerWindows({super.key});
 
   @override
   State<QRCodeScannerWindows> createState() => _QRCodeScannerWindowsState();
@@ -91,7 +92,7 @@ class _QRCodeScannerWindowsState extends State<QRCodeScannerWindows> {
       setState(() {
         if (code.split(":")[1].trim() == "5243") {
           result = code;
-          writeAddress(code, widget.flutterSecureStorage);
+          writeAddress(code);
           Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(

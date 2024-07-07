@@ -3,7 +3,6 @@ import 'package:dartz/dartz.dart';
 import 'package:faceq/config/classes/credentials.dart';
 import 'package:faceq/config/errors/failure.dart';
 import 'package:faceq/features/admin_panel/domain/entities/user_with_log.dart';
-import 'package:faceq/sl.dart';
 import 'package:http/http.dart' as http;
 abstract interface class RemoteDatasource{
 
@@ -12,16 +11,21 @@ abstract interface class RemoteDatasource{
 }
 
 class RemoteDatasourceImpl implements RemoteDatasource{
-  final Map<String,dynamic> storageResult;
+  final Credentials credentials;
 
-  RemoteDatasourceImpl({required this.storageResult});
+  _refresh()async{
+    await credentials.refresh();
+  }
+  RemoteDatasourceImpl({required this.credentials});
   @override
   Future<Either<Failure, List<dynamic>>> loadGroups(String token)async {
+    print("CREDENTIALS: ${credentials.address}, ${credentials.token}");
+    _refresh();
     try{
         final response = await http.post(
-          Uri.parse("http://${sl<Credentials>().address}/getGroups"),
+          Uri.parse("http://${credentials.address}/getGroups"),
           body: jsonEncode({
-            'token': sl<Credentials>().token,
+            'token': credentials.token,
           }),
           headers: {
             'Content-Type': 'application/json',
@@ -47,16 +51,17 @@ class RemoteDatasourceImpl implements RemoteDatasource{
 
   @override
   Future<Either<Failure, List<UserWithLog>>> loadReport(String token, String groupName, String date) async {
+    _refresh();
         print(jsonEncode({
-          'token': storageResult['token'],
+          'token': credentials.token,
           'date': date,
           'group': groupName,
         }));
         final response = await http.post(
-            Uri.parse("http://${storageResult['address']}/getDate"),
+            Uri.parse("http://${credentials.address}/getDate"),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
-              'token': storageResult['token'],
+              'token': credentials.token,
               'date': date,
               'group': groupName,
             }));

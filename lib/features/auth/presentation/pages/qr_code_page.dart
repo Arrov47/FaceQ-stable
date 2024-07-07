@@ -30,13 +30,9 @@ class _QrCodePageState extends State<QrCodePage> {
   @override
   Widget build(BuildContext context) {
     if (Platform.isAndroid) {
-      return QRCodeScannerAndroid(
-        flutterSecureStorage: flutterSecureStorage,
-      );
+      return const QRCodeScannerAndroid();
     } else {
-      return QRCodeScannerWindows(
-        flutterSecureStorage: flutterSecureStorage,
-      );
+      return const QRCodeScannerWindows();
     }
   }
 }

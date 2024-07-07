@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:faceq/config/classes/credentials.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/local_storage/write_credentials.dart';
 import 'package:faceq/features/auth/presentation/pages/check_password_page.dart';
+import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,9 +11,9 @@ import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:qr_code_utils/qr_code_utils.dart';
 
 class QRCodeScannerAndroid extends StatefulWidget {
-  final FlutterSecureStorage flutterSecureStorage;
 
-  const QRCodeScannerAndroid({super.key, required this.flutterSecureStorage});
+
+  const QRCodeScannerAndroid({super.key});
 
   @override
   State<QRCodeScannerAndroid> createState() => _QRCodeScannerAndroidState();
@@ -123,12 +125,12 @@ class _QRCodeScannerAndroidState extends State<QRCodeScannerAndroid> {
     super.dispose();
   }
 
-  _checkQrCode(String? code, QRViewController controller) {
+  _checkQrCode(String? code, QRViewController controller){
     if (code != null) {
       setState(() {
         if (code.split(":")[1] == "5243") {
           result = code;
-          writeAddress(code, widget.flutterSecureStorage);
+          writeAddress(code);
           controller.stopCamera();
           Navigator.pushAndRemoveUntil(
               context,

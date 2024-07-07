@@ -1,22 +1,36 @@
 import 'dart:convert';
 
+import 'package:faceq/config/classes/credentials.dart';
+import 'package:faceq/core/widgets/progess_loading.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/show_snackbar.dart';
 import 'package:faceq/features/admin_panel/presentation/widgets/NavigationBar/NavigationSideBar.dart';
+import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-class AddGroupPage extends StatelessWidget {
-  AddGroupPage({super.key, required this.storageResult});
+class AddGroupPage extends StatefulWidget {
+  const AddGroupPage({super.key});
 
-  final Map<String, dynamic> storageResult;
+  static route() => MaterialPageRoute(builder: (context) => AddGroupPage());
 
-  static route(Map<String, dynamic> storageResult) => MaterialPageRoute(
-      builder: (context) => AddGroupPage(
-            storageResult: storageResult,
-          ));
+  @override
+  State<AddGroupPage> createState() => _AddGroupPageState();
+}
+
+class _AddGroupPageState extends State<AddGroupPage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   final _groupField = TextEditingController();
+
+  final _credentials = sl<Credentials>();
+  Widget requestButton = const ProgressLoading();
+
+  @override
+  void initState() {
+    super.initState();
+    _getRequestButtonClickable();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +53,6 @@ class AddGroupPage extends StatelessWidget {
       ),
       drawer: NavigationSideBar(
         scaffoldKey: _scaffoldKey,
-        storageResult: storageResult,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -47,7 +60,8 @@ class AddGroupPage extends StatelessWidget {
             children: [
               Container(
                 height: 100.0,
-                margin: const EdgeInsets.symmetric(horizontal: 20.0,vertical:50.0),
+                margin: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 50.0),
                 child: TextField(
                   style: Theme.of(context).textTheme.labelLarge,
                   controller: _groupField,
@@ -57,7 +71,7 @@ class AddGroupPage extends StatelessWidget {
                       border: OutlineInputBorder()),
                 ),
               ),
-              ElevatedButton(onPressed: ()=> _sendRequest(), child: Text("Добавить группу"))
+              requestButton
             ],
           ),
         ),
@@ -66,37 +80,50 @@ class AddGroupPage extends StatelessWidget {
   }
 
   _sendRequest() {
+    setState(() {
+      requestButton = const ProgressLoading();
+    });
     final context = _scaffoldKey.currentState!.context;
     try {
-      print(storageResult);
-      http.post(Uri.parse("http://${storageResult['address']}/addGroup"),
+      http.post(Uri.parse("http://${_credentials.address}/addGroup"),
           body: jsonEncode({
-            'token': storageResult['token'],
+            'token': _credentials.token,
             'group_name': _groupField.text,
           }),
-          headers: {'Content-Type': 'application/json'}).then((response) async {
-        final statusCode = response.statusCode;
-        if (statusCode == 200) {
-          final body = jsonDecode(response.body);
-          if (body['is_valid']) {
-            showSnackBar("Группа успешно добавлена", context, Colors.green);
+          headers: {'Content-Type': 'application/json'}).then(
+        (response) async {
+          final statusCode = response.statusCode;
+          if (statusCode == 200) {
+            final body = jsonDecode(response.body);
+            if (body['is_valid']) {
+              _getRequestButtonClickable();
+              showSnackBar("Группа успешно добавлена", context, Colors.green);
+            } else {
+              const storage = FlutterSecureStorage(
+                  aOptions: AndroidOptions(encryptedSharedPreferences: true));
+              await storage.deleteAll();
+            }
           } else {
-            const storage = FlutterSecureStorage(
-                aOptions: AndroidOptions(encryptedSharedPreferences: true));
-            await storage.deleteAll();
+            _getRequestButtonClickable();
+            showSnackBar(
+                "Unexpected status code: $statusCode", context, Colors.red);
           }
-        } else {
-          showSnackBar(
-              "Unexpected status code: $statusCode", context, Colors.red);
-        }
-      },
-      //     onError: (err) {
-      //   _showSnackBar(err.toString(), context, Colors.red);
-      // }
+        },
+        //     onError: (err) {
+        //   _showSnackBar(err.toString(), context, Colors.red);
+        // }
       );
     } catch (err) {
+      _getRequestButtonClickable();
       showSnackBar(err.toString(), context, Colors.red);
     }
   }
 
+  _getRequestButtonClickable() {
+    setState(() {
+      requestButton = ElevatedButton(
+          onPressed: () => _sendRequest(),
+          child: const Text("Добавить группу"));
+    });
+  }
 }

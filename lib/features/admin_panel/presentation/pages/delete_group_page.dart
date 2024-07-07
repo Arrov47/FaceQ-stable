@@ -1,23 +1,38 @@
 import 'dart:convert';
+import 'package:faceq/config/classes/credentials.dart';
+import 'package:faceq/core/widgets/progess_loading.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/local_storage/delete_credentials.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/show_snackbar.dart';
 import 'package:faceq/features/admin_panel/presentation/widgets/NavigationBar/NavigationSideBar.dart';
 import 'package:faceq/features/auth/presentation/pages/check_password_page.dart';
+import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-class DeleteGroupPage extends StatelessWidget {
-  DeleteGroupPage({super.key, required this.storageResult});
+class DeleteGroupPage extends StatefulWidget {
+  const DeleteGroupPage({super.key});
 
-  final Map<String, dynamic> storageResult;
+  static route() => MaterialPageRoute(
+      builder: (context) => DeleteGroupPage());
 
-  static route(Map<String, dynamic> storageResult) => MaterialPageRoute(
-      builder: (context) => DeleteGroupPage(storageResult: storageResult));
+  @override
+  State<DeleteGroupPage> createState() => _DeleteGroupPageState();
+}
 
+class _DeleteGroupPageState extends State<DeleteGroupPage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   final _groupField = TextEditingController();
 
+  final _credentials =sl<Credentials>();
+
+  Widget requestButton = const ProgressLoading();
+@override
+  void initState() {
+    super.initState();
+    _getRequestButtonClickable();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,7 +54,6 @@ class DeleteGroupPage extends StatelessWidget {
       ),
       drawer: NavigationSideBar(
         scaffoldKey: _scaffoldKey,
-        storageResult: storageResult,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -57,15 +71,14 @@ class DeleteGroupPage extends StatelessWidget {
                       border: OutlineInputBorder()),
                 ),
               ),
-              ElevatedButton(
-                  onPressed: () => _sendRequest(),
-                  child: const Text("Удалить группу"))
+              requestButton,
             ],
           ),
         ),
       ),
     );
   }
+
   _signOut() {
     deleteCredentials();
     Navigator.pushAndRemoveUntil(_scaffoldKey.currentState!.context,
@@ -73,11 +86,14 @@ class DeleteGroupPage extends StatelessWidget {
   }
 
   _sendRequest() {
+  setState(() {
+    requestButton = const ProgressLoading();
+  });
     final context = _scaffoldKey.currentState!.context;
     try {
-      http.post(Uri.parse("http://${storageResult['address']}/deleteGroup"),
+      http.post(Uri.parse("http://${_credentials.address}/deleteGroup"),
           body: jsonEncode({
-            'token': storageResult['token'],
+            'token': _credentials.token,
             'group_name': _groupField.text,
           }),
           headers: {'Content-Type': 'application/json'}).then((response) async {
@@ -85,6 +101,7 @@ class DeleteGroupPage extends StatelessWidget {
         if (statusCode == 200) {
           final body = jsonDecode(response.body);
           if (body['is_valid'] && body['is_token_valid']) {
+            _getRequestButtonClickable();
             showSnackBar("Группа успешно удалена", context, Colors.green);
           } else if (!body['is_token_valid']) {
             const storage = FlutterSecureStorage(
@@ -92,20 +109,29 @@ class DeleteGroupPage extends StatelessWidget {
             await storage.deleteAll();
             _signOut();
           } else {
+            _getRequestButtonClickable();
             showSnackBar(
                 "Группа с таким именем не существует", context, Colors.red);
           }
         } else {
+          _getRequestButtonClickable();
           showSnackBar(
               "Unexpected status code: $statusCode", context, Colors.red);
         }
       }, onError: (err) {
+        _getRequestButtonClickable();
         showSnackBar(err.toString(), context, Colors.red);
       });
     } catch (err) {
+      _getRequestButtonClickable();
       showSnackBar(err.toString(), context, Colors.red);
     }
   }
-
-
+  _getRequestButtonClickable(){
+  setState(() {
+    requestButton = ElevatedButton(
+        onPressed: () => _sendRequest(),
+        child: const Text("Удалить группу"));
+  });
+  }
 }

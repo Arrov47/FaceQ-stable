@@ -14,8 +14,14 @@ class Credentials {
         encryptedSharedPreferences: true
     ));
     final json = await storage.read(key: Env.credentialKey);
-    final data = jsonDecode(json!);
-    token = data['token'];
-    address = data['address'];
+    print(json);
+    if(json != null){
+      final data = jsonDecode(json);
+      token = data['token'];
+      address = data['address'];
+    }
+  }
+  Future<void> refresh()async {
+    await _initialize();
   }
 }

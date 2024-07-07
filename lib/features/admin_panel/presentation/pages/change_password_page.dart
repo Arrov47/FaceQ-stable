@@ -1,21 +1,40 @@
 import 'dart:convert';
 
+import 'package:faceq/config/classes/credentials.dart';
+import 'package:faceq/core/widgets/progess_loading.dart';
+import 'package:faceq/features/admin_panel/domain/use_cases/local_storage/delete_credentials.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/show_snackbar.dart';
 import 'package:faceq/features/admin_panel/presentation/widgets/NavigationBar/NavigationSideBar.dart';
+import 'package:faceq/features/auth/presentation/pages/check_password_page.dart';
+import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import "package:http/http.dart" as http;
-class ChangePasswordPage extends StatelessWidget {
-  ChangePasswordPage({super.key, required this.storageResult});
+class ChangePasswordPage extends StatefulWidget {
+  const ChangePasswordPage({super.key});
 
-  final Map<String, dynamic> storageResult;
+  static route() => MaterialPageRoute(
+      builder: (context) => ChangePasswordPage());
 
-  static route(Map<String, dynamic> storageResult) => MaterialPageRoute(
-      builder: (context) => ChangePasswordPage(storageResult: storageResult));
+  @override
+  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+}
 
+class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   final _oldPassword = TextEditingController();
+
   final _newPassword = TextEditingController();
+
+  final _credentials = sl<Credentials>();
+
+  Widget requestButton = const ProgressLoading();
+@override
+  void initState() {
+    super.initState();
+    _getRequestButtonClickable();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,7 +55,6 @@ class ChangePasswordPage extends StatelessWidget {
       ),
       drawer: NavigationSideBar(
         scaffoldKey: _scaffoldKey,
-        storageResult: storageResult,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -65,20 +83,23 @@ class ChangePasswordPage extends StatelessWidget {
                       border: OutlineInputBorder()),
                 ),
               ),
-              ElevatedButton(onPressed: ()=> _sendRequest(), child: Text("Добавить группу"))
+              requestButton
             ],
           ),
         ),
       ),
     );
   }
+
   _sendRequest() {
+    setState(() {
+      requestButton = const ProgressLoading();
+    });
     final context = _scaffoldKey.currentState!.context;
     try {
-      print(storageResult);
-      http.post(Uri.parse("http://${storageResult['address']}/changePassword"),
+      http.post(Uri.parse("http://${_credentials.address}/changePassword"),
           body: jsonEncode({
-            'token': storageResult['token'],
+            'token': _credentials.token,
             'old_password': _oldPassword.text,
             'new_password': _newPassword.text,
           }),
@@ -87,20 +108,37 @@ class ChangePasswordPage extends StatelessWidget {
         if (statusCode == 200) {
           final body = jsonDecode(response.body);
           if (body['is_valid']) {
+            _getRequestButtonClickable();
             showSnackBar("Пароль успешно изменён", context, Colors.green);
           } else {
-            const storage = FlutterSecureStorage(
-                aOptions: AndroidOptions(encryptedSharedPreferences: true));
-            await storage.deleteAll();
+            showSnackBar("Неверные данные", context, Colors.red);
+            _getRequestButtonClickable();
+            if(body['is_token_valid']){
+              _signOut();
+
+            }
           }
         } else {
+          _getRequestButtonClickable();
           showSnackBar(
               "Unexpected status code: $statusCode", context, Colors.red);
         }
       },
       );
     } catch (err) {
+      _getRequestButtonClickable();
       showSnackBar(err.toString(), context, Colors.red);
     }
+  }
+
+  _getRequestButtonClickable(){
+    setState(() {
+      requestButton =ElevatedButton(onPressed: ()=> _sendRequest(), child: Text("Изменить пароль"));
+    });
+  }
+  _signOut() {
+    deleteCredentials();
+    Navigator.pushAndRemoveUntil(_scaffoldKey.currentState!.context,
+        CheckPasswordPage.route(), (route) => false);
   }
 }

@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:faceq/config/classes/credentials.dart';
-import 'package:faceq/features/admin_panel/presentation/bloc/get_dates/load_groups/load_groups_bloc.dart';
+import 'package:faceq/features/admin_panel/domain/use_cases/show_snackbar.dart';
 import 'package:faceq/sl.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:faceq/config/env/env.dart';
 import 'package:faceq/features/admin_panel/presentation/pages/dates_page.dart';
@@ -33,7 +31,6 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
   bool suffixVisible = false;
   String? address;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final dio = Dio();
 
   @override
   void initState() {
@@ -45,10 +42,10 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
     final jsonData = await storage.read(key: Env.credentialKey);
     if (jsonData != null) {
       final result = jsonDecode(jsonData) as Map<String, dynamic>;
+      print(result);
       setState(() {
         address = result['address'];
       });
-      print("THIS IS FROM STORAGE CHECK PASSWORD $result");
       if (result.containsKey('token') && result.containsKey('address')) {
         _checkAndLogin(result);
       }
@@ -102,7 +99,7 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
             "FaceQ",
             style: Theme.of(context).textTheme.headlineLarge,
           ),
-          SizedBox(
+          const SizedBox(
             height: 30,
           ),
           Padding(
@@ -129,11 +126,11 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
                         icon: const Icon(Icons.close))
                     : null,
                 hintText: "Пароль",
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 50,
           ),
           ElevatedButton(
@@ -149,10 +146,8 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
     ));
   }
 
-  _navigate(Map<String, dynamic> storageResult) {
-    context.read<LoadGroupsBloc>().add(LoadGroups(token: sl<Credentials>().token));
-    Navigator.pushAndRemoveUntil(
-        context, DatesPage.route(storageResult), (route) => false);
+  _navigate() {
+    Navigator.pushAndRemoveUntil(context, DatesPage.route(), (route) => false);
   }
 
   _showAlertDialogAndNavigate() {
@@ -223,7 +218,7 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
     if (statusCode == 200) {
       final valid = jsonDecode(response.body);
       if (valid['is_valid']) {
-        _navigate(result);
+        _navigate();
       }
     } else {
       _badResponse("Status code: $statusCode and ${response.body}");
@@ -231,7 +226,6 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
   }
 
   _loginUser(String password) async {
-    print("HERE IS ADDRESS : http://$address/checkPassword");
     try {
       final response =
           await http.post(Uri.parse("http://$address/checkPassword"),
@@ -256,14 +250,18 @@ class _CheckPasswordPageState extends State<CheckPasswordPage> {
             'address': address,
             'token': result['token'],
           };
-          await storage.write(key: Env.credentialKey, value: jsonEncode(data));
-          _navigate(data);
+          await sl<FlutterSecureStorage>()
+              .write(key: Env.credentialKey, value: jsonEncode(data));
+          await sl<Credentials>().refresh();
+
+          _navigate();
+        } else {
+          showSnackBar("Неправильный пароль ", context, Colors.red);
         }
       } else {
         _badResponse("Status code ine: $statusCode");
       }
     } catch (err) {
-      print(err.toString());
       _badResponse("Message: ${err.toString()}");
     }
   }
