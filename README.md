@@ -12,7 +12,7 @@ FaceQ - for controlling daily report.
 Никакие права на торговую марку или патенты не предоставляются в рамках данного лицензионного соглашения.
 Автор не несет ответственности за любые модификации, распространение или использование данного программного обеспечения.
 Данное программное обеспечение предоставляется "как есть", без каких-либо гарантий, явных или подразумеваемых, включая, но не ограничиваясь гарантиями товарной пригодности, соответствия определенной цели или отсутствия нарушений.
-#Подробнее: https://github.com/Arrov47/FaceQ-stable/blob/main/LICENSE.md
+# Подробнее: https://github.com/Arrov47/FaceQ-stable/blob/main/LICENSE.md
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -25,8 +25,8 @@ When using, copying, or distributing the software, the original project name "Fa
 No trademark or patent rights are granted under this license.
 The author takes no responsibility for any modifications, distribution, or use of this software.
 This software is provided "as is", without any express or implied warranties, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
-#More information: 
-Подробнее: https://github.com/Arrov47/FaceQ-stable/blob/main/LICENSE.md
+# More information: 
+https://github.com/Arrov47/FaceQ-stable/blob/main/LICENSE.md
 
 ## Getting Started
 
