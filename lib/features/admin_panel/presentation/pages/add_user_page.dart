@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:faceq/config/classes/credentials.dart';
 import 'package:faceq/core/widgets/progess_loading.dart';
@@ -12,15 +11,13 @@ import 'package:faceq/features/admin_panel/presentation/widgets/fieldBuilder.dar
 import 'package:faceq/features/auth/presentation/pages/check_password_page.dart';
 import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class AddUserPage extends StatefulWidget {
   const AddUserPage({super.key});
 
-  static route() => MaterialPageRoute(
-      builder: (context) => AddUserPage());
+  static route() => MaterialPageRoute(builder: (context) => AddUserPage());
 
   @override
   State<AddUserPage> createState() => _AddUserPageState();
@@ -42,6 +39,21 @@ class _AddUserPageState extends State<AddUserPage> {
 
   final _credentials = sl<Credentials>();
   Widget requestButton = const ProgressLoading();
+  List<dynamic>? groupData;
+
+  @override
+  void initState() {
+    super.initState();
+    getGroups();
+  }
+
+  void getGroups() async {
+    final result = await _getGroups();
+    setState(() {
+      groupData = result;
+    });
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -77,90 +89,81 @@ class _AddUserPageState extends State<AddUserPage> {
             ...fieldBuilder("Введите имя", _name, context),
             ...fieldBuilder("Введите фамилию", _surName, context),
             ...fieldBuilder("Введите отчество", _fatherName, context),
-            FutureBuilder(
-                future: _getGroups(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.data != null) {
-                    final data = snapshot.data;
-                    return Container(
-                        margin: const EdgeInsets.all(20.0),
-                        child: DropdownSearch<String>(
-                            onChanged: (group) {
-                              if (group != null) {
-                                setState(() {
-                                  _groupName = group;
-                                });
-                              }
-                            },
-                            items: List.generate(data!.length, (index) {
-                              return data[index];
-                            }),
-                            dropdownDecoratorProps: DropDownDecoratorProps(
-                              baseStyle: Theme.of(context).textTheme.labelLarge,
-                              dropdownSearchDecoration: InputDecoration(
-                                  enabledBorder: Theme.of(context)
-                                      .inputDecorationTheme
-                                      .enabledBorder,
-                                  labelStyle: Theme.of(context)
-                                      .inputDecorationTheme
-                                      .labelStyle,
-                                  errorStyle: Theme.of(context)
-                                      .inputDecorationTheme
-                                      .errorStyle,
-                                  helperStyle: Theme.of(context)
-                                      .inputDecorationTheme
-                                      .helperStyle,
-                                  border: OutlineInputBorder(),
-                                  labelText: "Выберите группу"),
-                            ),
-                            popupProps: PopupProps.menu(
-                              itemBuilder: (context, name, b) {
-                                return InkWell(
-                                  onTap: () {},
-                                  child: ListTile(
-                                    title: Text(
-                                      name,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge,
-                                    ),
-                                  ),
-                                );
-                              },
-                              menuProps: MenuProps(
-                                  shadowColor:
-                                      Theme.of(context).iconTheme.color,
-                                  backgroundColor: Theme.of(context)
-                                      .scaffoldBackgroundColor),
-                              showSearchBox: true,
-                              searchFieldProps: TextFieldProps(
-                                  autocorrect: false,
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                  decoration: InputDecoration(
-                                    enabledBorder: Theme.of(context)
-                                        .inputDecorationTheme
-                                        .enabledBorder,
-                                    hintStyle: Theme.of(context)
-                                        .inputDecorationTheme
-                                        .hintStyle,
-                                    errorStyle: Theme.of(context)
-                                        .inputDecorationTheme
-                                        .errorStyle,
-                                    helperStyle: Theme.of(context)
-                                        .inputDecorationTheme
-                                        .helperStyle,
-                                  )),
-                            )
-                            // selectedItem: data[0],
-                            ));
-                  } else {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.blue,
+            if (groupData != null)
+              Container(
+                  margin: const EdgeInsets.all(20.0),
+                  child: DropdownSearch<String>(
+                      onChanged: (group) {
+                        if (group != null) {
+                          setState(() {
+                            _groupName = group;
+                          });
+                        }
+                      },
+                      items: List.generate(groupData!.length, (index) {
+                        return groupData![index];
+                      }),
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        baseStyle: Theme.of(context).textTheme.labelLarge,
+                        dropdownSearchDecoration: InputDecoration(
+                            enabledBorder: Theme.of(context)
+                                .inputDecorationTheme
+                                .enabledBorder,
+                            labelStyle: Theme.of(context)
+                                .inputDecorationTheme
+                                .labelStyle,
+                            errorStyle: Theme.of(context)
+                                .inputDecorationTheme
+                                .errorStyle,
+                            helperStyle: Theme.of(context)
+                                .inputDecorationTheme
+                                .helperStyle,
+                            border: OutlineInputBorder(),
+                            labelText: "Выберите группу"),
                       ),
-                    );
-                  }
-                }),
+                      popupProps: PopupProps.menu(
+                        itemBuilder: (context, name, b) {
+                          return InkWell(
+                            onTap: () {},
+                            child: ListTile(
+                              title: Text(
+                                name,
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                            ),
+                          );
+                        },
+                        menuProps: MenuProps(
+                            shadowColor: Theme.of(context).iconTheme.color,
+                            backgroundColor:
+                                Theme.of(context).scaffoldBackgroundColor),
+                        showSearchBox: true,
+                        searchFieldProps: TextFieldProps(
+                            autocorrect: false,
+                            style: Theme.of(context).textTheme.labelLarge,
+                            decoration: InputDecoration(
+                              enabledBorder: Theme.of(context)
+                                  .inputDecorationTheme
+                                  .enabledBorder,
+                              hintStyle: Theme.of(context)
+                                  .inputDecorationTheme
+                                  .hintStyle,
+                              errorStyle: Theme.of(context)
+                                  .inputDecorationTheme
+                                  .errorStyle,
+                              helperStyle: Theme.of(context)
+                                  .inputDecorationTheme
+                                  .helperStyle,
+                            )),
+                      )
+                      // selectedItem: data[0],
+                      ))
+            else
+              const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.blue,
+                ),
+              ),
             Container(
               // height: 100.0,
               margin: const EdgeInsets.all(5.0),
@@ -191,7 +194,9 @@ class _AddUserPageState extends State<AddUserPage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
               child: Row(
-                mainAxisAlignment: Platform.isWindows?MainAxisAlignment.center:MainAxisAlignment.spaceAround,
+                mainAxisAlignment: Platform.isWindows
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.spaceAround,
                 children: [
                   ElevatedButton(
                       onPressed: () async {
@@ -206,19 +211,21 @@ class _AddUserPageState extends State<AddUserPage> {
                         });
                       },
                       child: const Text("Галерея")),
-                  Platform.isWindows?Container():ElevatedButton(
-                      onPressed: () async {
-                        await _imagePicker
-                            .pickImage(source: ImageSource.camera)
-                            .then((pickedImage) {
-                          if (pickedImage != null) {
-                            setState(() {
-                              _image = File(pickedImage.path);
+                  Platform.isWindows
+                      ? Container()
+                      : ElevatedButton(
+                          onPressed: () async {
+                            await _imagePicker
+                                .pickImage(source: ImageSource.camera)
+                                .then((pickedImage) {
+                              if (pickedImage != null) {
+                                setState(() {
+                                  _image = File(pickedImage.path);
+                                });
+                              }
                             });
-                          }
-                        });
-                      },
-                      child: const Text("Камера"))
+                          },
+                          child: const Text("Камера"))
                 ],
               ),
             ),
@@ -284,16 +291,17 @@ class _AddUserPageState extends State<AddUserPage> {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse("http://${_credentials.address}/addUser"),
-
     );
     request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
-    request.fields.addAll({'token':_credentials.token,
+    request.fields.addAll({
+      'token': _credentials.token,
       'name': _name.text,
       'surname': _surName.text,
       'group': _groupName!,
-      "fathers_name": _fatherName.text,});
-    request.send().then((response){
-      if(response.statusCode == 200){
+      "fathers_name": _fatherName.text,
+    });
+    request.send().then((response) {
+      if (response.statusCode == 200) {
         setState(() {
           _name.clear();
           _surName.clear();
@@ -303,11 +311,12 @@ class _AddUserPageState extends State<AddUserPage> {
         });
         showSnackBar("Пользователь успешно добавлено", context, Colors.green);
         _getRequestButtonClickable();
-      }else{
-        showSnackBar("Status code: ${response.statusCode}", context, Colors.red);
+      } else {
+        showSnackBar(
+            "Status code: ${response.statusCode}", context, Colors.red);
         _getRequestButtonClickable();
       }
-    },onError: (err){
+    }, onError: (err) {
       showSnackBar("Status code: ${err.toString()}", context, Colors.red);
       _getRequestButtonClickable();
     });
@@ -354,7 +363,8 @@ class _AddUserPageState extends State<AddUserPage> {
     Navigator.pushAndRemoveUntil(_scaffoldKey.currentState!.context,
         CheckPasswordPage.route(), (route) => false);
   }
-  _getRequestButtonClickable(){
+
+  _getRequestButtonClickable() {
     setState(() {
       requestButton = ElevatedButton(
           onPressed: () async {
@@ -362,8 +372,8 @@ class _AddUserPageState extends State<AddUserPage> {
                 _name.text.isEmpty ||
                 _surName.text.isEmpty ||
                 _groupName == null) {
-              showSnackBar("Заполните все поля правильно ! ", context,
-                  Colors.red);
+              showSnackBar(
+                  "Заполните все поля правильно ! ", context, Colors.red);
             } else {
               _sendRequest();
             }

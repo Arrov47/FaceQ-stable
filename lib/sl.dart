@@ -9,18 +9,19 @@ import 'package:get_it/get_it.dart';
 
 final sl = GetIt.instance;
 
-syncDependencies() async{
+Future<void> syncDependencies() async {
   await syncReportPage();
 }
 
-syncReportPage() async {
-  sl.registerSingleton<FlutterSecureStorage>(const FlutterSecureStorage(aOptions: AndroidOptions(
+Future<void> syncReportPage() async {
+  sl.registerSingleton<FlutterSecureStorage>(const FlutterSecureStorage(
+      aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   )));
-sl.registerSingleton(Credentials());
+  sl.registerSingleton(Credentials());
 
-  sl.registerFactory<RemoteDatasource>(() => RemoteDatasourceImpl(credentials:
-          sl<Credentials>()));
+  sl.registerFactory<RemoteDatasource>(
+      () => RemoteDatasourceImpl(credentials: sl<Credentials>()));
 
   sl.registerFactory<ReportRepository>(
       () => ReportRepositoryImpl(remoteDatasource: sl<RemoteDatasource>()));
@@ -30,6 +31,4 @@ sl.registerSingleton(Credentials());
 
   sl.registerFactory(
       () => LoadGroupsUseCase(reportRepository: sl<ReportRepository>()));
-
-
 }

@@ -8,6 +8,7 @@ import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+
 class ChangeUserFacePage extends StatefulWidget {
   const ChangeUserFacePage({super.key});
 
@@ -23,15 +24,15 @@ class _ChangeUserFacePageState extends State<ChangeUserFacePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final _userID = TextEditingController();
-  Widget?
-  requestButton;
+  Widget? requestButton;
   File? _image;
   final _credentials = sl<Credentials>();
-@override
+  @override
   void initState() {
     super.initState();
     _getRequestButtonClickable();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,13 +59,15 @@ class _ChangeUserFacePageState extends State<ChangeUserFacePage> {
           children: [
             Container(
               height: 100.0,
-              margin: const EdgeInsets.symmetric(horizontal: 20.0,vertical:20.0),
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
               child: TextField(
                 style: Theme.of(context).textTheme.labelLarge,
                 controller: _userID,
                 decoration: const InputDecoration(
                     hintText: "Введите id пользователя",
-                    helperText: "Например: fe37ba49-6bf0-4f5b-af10-a42e0ac41da3",
+                    helperText:
+                        "Например: fe37ba49-6bf0-4f5b-af10-a42e0ac41da3",
                     border: OutlineInputBorder()),
               ),
             ),
@@ -98,7 +101,9 @@ class _ChangeUserFacePageState extends State<ChangeUserFacePage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
               child: Row(
-                mainAxisAlignment: Platform.isWindows?MainAxisAlignment.center:MainAxisAlignment.spaceAround,
+                mainAxisAlignment: Platform.isWindows
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.spaceAround,
                 children: [
                   ElevatedButton(
                       onPressed: () async {
@@ -113,19 +118,21 @@ class _ChangeUserFacePageState extends State<ChangeUserFacePage> {
                         });
                       },
                       child: const Text("Галерея")),
-                  Platform.isWindows?Container():ElevatedButton(
-                      onPressed: () async {
-                        await ImagePicker()
-                            .pickImage(source: ImageSource.camera)
-                            .then((pickedImage) {
-                          if (pickedImage != null) {
-                            setState(() {
-                              _image = File(pickedImage.path);
+                  Platform.isWindows
+                      ? Container()
+                      : ElevatedButton(
+                          onPressed: () async {
+                            await ImagePicker()
+                                .pickImage(source: ImageSource.camera)
+                                .then((pickedImage) {
+                              if (pickedImage != null) {
+                                setState(() {
+                                  _image = File(pickedImage.path);
+                                });
+                              }
                             });
-                          }
-                        });
-                      },
-                      child: const Text("Камера"))
+                          },
+                          child: const Text("Камера"))
                 ],
               ),
             ),
@@ -140,13 +147,13 @@ class _ChangeUserFacePageState extends State<ChangeUserFacePage> {
                   ),
                   _image == null
                       ? const Icon(
-                    Icons.close,
-                    color: Colors.red,
-                  )
+                          Icons.close,
+                          color: Colors.red,
+                        )
                       : const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                  )
+                          Icons.check_circle,
+                          color: Colors.green,
+                        )
                 ],
               ),
             ),
@@ -157,7 +164,7 @@ class _ChangeUserFacePageState extends State<ChangeUserFacePage> {
             SizedBox(
               height: 25.0,
             ),
-            requestButton??ProgressLoading(),
+            requestButton ?? ProgressLoading(),
           ],
         ),
       ),
@@ -187,43 +194,47 @@ class _ChangeUserFacePageState extends State<ChangeUserFacePage> {
     setState(() {
       requestButton = const ProgressLoading();
     });
-    if(_image != null){
+    if (_image != null) {
       final request = http.MultipartRequest(
         'POST',
         Uri.parse("http://${_credentials.address}/changeUserFace"),
-
       );
-      request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
-      request.fields.addAll({'token':_credentials.token,
-        'id': _userID.text,});
-      request.send().then((response){
-        if(response.statusCode == 200){
+      request.files
+          .add(await http.MultipartFile.fromPath('photo', _image!.path));
+      request.fields.addAll({
+        'token': _credentials.token,
+        'uuid': _userID.text,
+      });
+      request.send().then((response) {
+        if (response.statusCode == 200) {
           setState(() {
             _image = null;
           });
           _getRequestButtonClickable();
           showSnackBar("Свойство успешно изменены", context, Colors.green);
-        }else{
+        } else {
           _getRequestButtonClickable();
-          showSnackBar("Status code: ${response.statusCode}", context, Colors.red);
+          showSnackBar(
+              "Status code: ${response.statusCode}", context, Colors.red);
         }
-      },onError: (err){
+      }, onError: (err) {
         _getRequestButtonClickable();
         showSnackBar("Status code: ${err.toString()}", context, Colors.red);
       });
-    }else{
+    } else {
       _getRequestButtonClickable();
       showSnackBar("Выберите изоброжение", context, Colors.red);
     }
   }
 
-  _getRequestButtonClickable(){
+  _getRequestButtonClickable() {
     setState(() {
-      requestButton = ElevatedButton(onPressed: ()=> _sendRequest(), child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20,vertical: 10),
-        child: Text("Изменить"),
-      ));
+      requestButton = ElevatedButton(
+          onPressed: () => _sendRequest(),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Text("Изменить"),
+          ));
     });
   }
-
 }

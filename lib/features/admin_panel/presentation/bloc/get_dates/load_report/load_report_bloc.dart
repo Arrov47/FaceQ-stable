@@ -20,7 +20,7 @@ class LoadReportBloc extends Bloc<LoadReportEvent, LoadReportState> {
           emit(ReportLoaded(users: users));
         });
       } catch (err) {
-        print(err.toString());
+        // print(err.toString());
         emit(ReportLoadFailed(message: err.toString()));
       }
     });

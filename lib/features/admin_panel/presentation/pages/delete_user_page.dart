@@ -102,6 +102,9 @@ class _DeleteUserPageState extends State<DeleteUserPage> {
                   aOptions: AndroidOptions(encryptedSharedPreferences: true));
               await storage.deleteAll();
             }
+          } else if (statusCode == 400) {
+            _getRequestButtonClickable();
+            showSnackBar("Нет пользователя с таким id", context, Colors.red);
           } else {
             _getRequestButtonClickable();
             showSnackBar(

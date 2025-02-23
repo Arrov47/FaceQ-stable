@@ -1,16 +1,11 @@
-
 import 'dart:io';
 
-import 'package:faceq/config/classes/credentials.dart';
 import 'package:faceq/features/admin_panel/domain/use_cases/local_storage/write_credentials.dart';
 import 'package:faceq/features/auth/presentation/pages/check_password_page.dart';
-import 'package:faceq/sl.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 class QRCodeScannerWindows extends StatefulWidget {
-
   const QRCodeScannerWindows({super.key});
 
   @override
@@ -37,13 +32,17 @@ class _QRCodeScannerWindowsState extends State<QRCodeScannerWindows> {
                       setState(() {
                         _image = File(result.path);
                       });
-                      final absolutePath =
-                      Directory.current.path.replaceAll("\\", '/');
-                      var processResult = await Process.run(
-                          "$absolutePath/lib/features/auth/presentation/scripts/windows_qr.exe",
-                          [
-                            _image!.path.replaceAll("\\", "/"),
-                          ]);
+                      // print(Platform.resolvedExecutable
+                      //     .replaceFirst("faceq.exe", "windows_qr.exe"));
+                      final absolutePath = Platform.resolvedExecutable
+                          .replaceFirst("faceq.exe", "windows_qr.exe")
+                          .replaceAll("\\", '/');
+                      // final absolutePath =
+                      //     Directory.current.path.replaceAll("\\", '/');
+                      print(absolutePath);
+                      var processResult = await Process.run(absolutePath, [
+                        _image!.path.replaceAll("\\", "/"),
+                      ]);
                       final code = processResult.stdout.toString();
                       _checkQrCode(code);
                     }
@@ -59,18 +58,20 @@ class _QRCodeScannerWindowsState extends State<QRCodeScannerWindows> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _image== null?"Изоброжение не выбрано":"Изоброжение выбрано",
+                    _image == null
+                        ? "Изоброжение не выбрано"
+                        : "Изоброжение выбрано",
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   _image == null
                       ? const Icon(
-                    Icons.close,
-                    color: Colors.red,
-                  )
+                          Icons.close,
+                          color: Colors.red,
+                        )
                       : const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                  )
+                          Icons.check_circle,
+                          color: Colors.green,
+                        )
                 ],
               ),
             ),
@@ -97,7 +98,7 @@ class _QRCodeScannerWindowsState extends State<QRCodeScannerWindows> {
               context,
               MaterialPageRoute(
                   builder: (context) => const CheckPasswordPage()),
-                  (route) => false);
+              (route) => false);
         } else {
           result = "Не тот QR код";
         }
